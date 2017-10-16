@@ -1,0 +1,85 @@
+package mygame;
+
+import com.jme3.app.SimpleApplication;
+import com.jme3.material.Material;
+import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f; // adds vectors for placement
+import com.jme3.renderer.RenderManager;
+import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
+import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Sphere;
+import com.jme3.scene.Spatial;
+
+/**
+ * This is the Main Class of your Game. You should only do initialization here.
+ * Move your Logic into AppStates or Controls
+ * @author normenhansen
+ */
+public class Main extends SimpleApplication {
+
+    public static void main(String[] args) {
+        Main app = new Main();
+        app.start();
+    }
+
+    @Override
+    public void simpleInitApp() { // loaded at the start of app load
+        // Box
+        Box b = new Box(1, 1, 1); // creates it with properties (width, height, thickness)
+        Geometry geom = new Geometry("Box", b);
+        geom.setLocalTranslation(new Vector3f(1,10,1)); // moves the box (x, y, z)
+
+        Material mat_brick = new Material( 
+            assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat_brick.setTexture("ColorMap", 
+            assetManager.loadTexture("Textures/Terrain/BrickWall/BrickWall.jpg"));
+        geom.setMaterial(mat_brick); // sets texture to a brick wall
+
+         /** Create a pivot node at (0,0,0) and attach it to the root node */
+        Node pivot = new Node("pivot");
+        rootNode.attachChild(pivot); // put this node in the scene
+        
+        pivot.attachChild(geom);
+        pivot.rotate(.4f,.4f,0f); // rotates the objects attatched to pivot
+        // use <shape>.rotate(rotations); for individual shapes
+        
+        // to detach use rootNode.detatchchild();
+        
+        // Sphere test
+        // Shape variable = new Shape(zSamples, Points, size)
+        Sphere c = new Sphere(10, 100, 5);
+        Geometry geon = new Geometry("Sphere", c);
+        
+        
+        Material mak = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mak.setColor("Color", ColorRGBA.Red); // color of matierial
+        geon.setMaterial(mak);
+        
+        rootNode.attachChild(geon);
+        
+        geon.setLocalTranslation( new Vector3f( 0.0f, 40.2f, -2.0f ) ); // moves sphere to a specific place
+        geon.move( -4, -15, 0 ); // moves from current location
+        
+        pivot.attachChild(geom);
+        pivot.rotate(.4f,.4f,0f); // rotates the objects attatched to pivot
+        // use <shape>.rotate(rotations); for individual shapes
+        
+        // tea pot
+        Spatial teapot = assetManager.loadModel("Models/Teapot/Teapot.obj");
+        Material mat_default = new Material( 
+            assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        teapot.setMaterial(mat_default);
+        rootNode.attachChild(teapot);
+    }
+
+    @Override
+    public void simpleUpdate(float tpf) {
+        //TODO: add update code
+    }
+
+    @Override
+    public void simpleRender(RenderManager rm) {
+        //TODO: add render code
+    }
+}
