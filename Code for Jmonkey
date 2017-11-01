@@ -1,6 +1,7 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f; // adds vectors for placement
@@ -10,36 +11,50 @@ import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.Spatial;
+// for input
+import com.jme3.input.KeyInput;
+import com.jme3.input.MouseInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.AnalogListener;
+import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseButtonTrigger;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
- * Move your Logic into AppStates or Controls
+ * Move your Logic into AppStates or Controls (to the updates for loops or render)
  * @author normenhansen
  */
-public class Main extends SimpleApplication {
-
-    public static void main(String[] args) {
+public class Main extends SimpleApplication 
+{
+    // static makes something like a global variable, it will need to be make as a public however
+    public static int num, num2, num3;
+    
+    public static void main(String[] args) 
+    {
         Main app = new Main();
         app.start();
     }
+    
+    protected Geometry geom; // Protects or allows use in other functions
+    // don't initialize later or it will not work
+    protected Geometry geon;
+    Boolean isRunning=true;
 
     @Override
-    public void simpleInitApp() { // loaded at the start of app load
+    public void simpleInitApp() 
+    { // loaded at the start of app load and initializes the scene, once
         // Box
         Box b = new Box(1, 1, 1); // creates it with properties (width, height, thickness)
-        Geometry geom = new Geometry("Box", b);
+        geom = new Geometry("Box", b);
         geom.setLocalTranslation(new Vector3f(1,10,1)); // moves the box (x, y, z)
-
         Material mat_brick = new Material( 
             assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat_brick.setTexture("ColorMap", 
             assetManager.loadTexture("Textures/Terrain/BrickWall/BrickWall.jpg"));
         geom.setMaterial(mat_brick); // sets texture to a brick wall
-
          /** Create a pivot node at (0,0,0) and attach it to the root node */
         Node pivot = new Node("pivot");
         rootNode.attachChild(pivot); // put this node in the scene
-        
         pivot.attachChild(geom);
         pivot.rotate(.4f,.4f,0f); // rotates the objects attatched to pivot
         // use <shape>.rotate(rotations); for individual shapes
@@ -49,21 +64,17 @@ public class Main extends SimpleApplication {
         // Sphere test
         // Shape variable = new Shape(zSamples, Points, size)
         Sphere c = new Sphere(10, 100, 5);
-        Geometry geon = new Geometry("Sphere", c);
-        
-        
+        geon = new Geometry("Sphere", c); // normally Geometry geon, but it is already created
         Material mak = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mak.setColor("Color", ColorRGBA.Red); // color of matierial
         geon.setMaterial(mak);
-        
-        rootNode.attachChild(geon);
-        
+        // rootNode.attachChild(geon);
         geon.setLocalTranslation( new Vector3f( 0.0f, 40.2f, -2.0f ) ); // moves sphere to a specific place
         geon.move( -4, -15, 0 ); // moves from current location
-        
-        pivot.attachChild(geom);
-        pivot.rotate(.4f,.4f,0f); // rotates the objects attatched to pivot
-        // use <shape>.rotate(rotations); for individual shapes
+        pivot.attachChild(geon);
+        // pivot.rotate(.4f,.4f,0f);
+        pivot.setUserData( "geon", 42 ); // stores data in pivot
+        int id = pivot.getUserData( "geon" ); // calls data stored in pivot
         
         // tea pot
         Spatial teapot = assetManager.loadModel("Models/Teapot/Teapot.obj");
@@ -71,16 +82,164 @@ public class Main extends SimpleApplication {
             assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         teapot.setMaterial(mat_default);
         rootNode.attachChild(teapot);
+        
+        // Load a model from test_data (OgreXML + material + texture)
+        Spatial ninja = assetManager.loadModel("Models/Ninja/Ninja.mesh.xml");
+        ninja.scale(0.05f, 0.05f, 0.05f);
+        ninja.rotate(0.0f, -3.0f, 0.0f);
+        ninja.setLocalTranslation(0.0f, -5.0f, -2.0f);
+        rootNode.attachChild(ninja);
+        // You must add a light to make the model visible
+        DirectionalLight sun = new DirectionalLight();
+        sun.setDirection(new Vector3f(-0.1f, -0.7f, -1.0f));
+        rootNode.addLight(sun);
+        
+        num = -1000;
+        num2 = 0;
+        num3 = 0;
+        // initKeys(); // load my custom keybinding
+    }
+    
+    // Controls
+    /*
+    private void initKeys() 
+    {
+        // You can map one or several inputs to one named action
+        inputManager.addMapping("Pause",  new KeyTrigger(KeyInput.KEY_P));
+        inputManager.addMapping("Left",   new KeyTrigger(KeyInput.KEY_J));
+        inputManager.addMapping("Right",  new KeyTrigger(KeyInput.KEY_K));
+        inputManager.addMapping("Rotate", new KeyTrigger(KeyInput.KEY_SPACE),
+                                          new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
+        // Add the names to the action listener.
+        inputManager.addListener(actionListener,"Pause");
+        inputManager.addListener(analogListener,"Left", "Right", "Rotate"); 
+    }
+    
+    private ActionListener() 
+    {
+        public void onAction(String name, boolean keyPressed, float tpf) 
+        {
+          if (name.equals("Pause") && !keyPressed) {
+            isRunning = !isRunning;
+          }
+        }
+    }
+
+    private AnalogListener analogListener = new AnalogListener() 
+    {
+        public void onAnalog(String name, float value, float tpf) 
+        {
+            if (isRunning) 
+            {
+              if (name.equals("Rotate")) 
+              {
+                player.rotate(0, value*speed, 0);
+              }
+              if (name.equals("Right")) 
+              {
+                Vector3f v = player.getLocalTranslation();
+                player.setLocalTranslation(v.x + value*speed, v.y, v.z);
+              }
+              if (name.equals("Left")) 
+              {
+                Vector3f v = player.getLocalTranslation();
+                player.setLocalTranslation(v.x - value*speed, v.y, v.z);
+              }
+            } else 
+            {
+              System.out.println("Press P to unpause.");
+            }
+        }
+    };  
+    */
+    
+        
+    @Override
+    // use main event loop (thing below) for repeating changes
+    public void simpleUpdate(float tpf) // Runs code after initialization
+    {
+        
+        // makes box rotate, then appear to roll
+        geom.rotate(0, 0, 2f * tpf); // tpf is time per frame
+        geom.move(-1f * tpf, 0, 0);
+        
+        
+        // makes the sphere shrink and grow
+        /*
+        if (num2 >= -500)
+        {
+            geon.scale( 1.001f,  1.001f, 1.001f);
+        num2 = num2 - 1;
+        } 
+        else if (num2 < -500)
+        {
+           geon.scale( 0.999f, 0.999f, 0.999f); 
+        num2 = num2 - 1;
+        }
+        
+        if (num2 == (num + 1))
+        {
+            num2 = 0;
+        }
+        */
+        
+        /*
+        geon.move(0, -1 * tpf, 0); // moves sphere infinitely down
+        if (num2 > num)
+        {
+            num2 = num2 - 1;
+        }
+        else
+        {
+            geon.move(0, 1 * tpf, 0); // moves the sphere up, countering earlier code
+        }
+        */
     }
 
     @Override
-    public void simpleUpdate(float tpf) {
-        //TODO: add update code
-    }
-
-    @Override
-    public void simpleRender(RenderManager rm) {
-        //TODO: add render code
+    // redraws the scene, but not until after the code above
+    public void simpleRender(RenderManager rm) 
+    {
+        
+        if (num3 == 0)
+        {
+            Material bork = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            bork.setColor("Color", ColorRGBA.Red); // color of matierial
+            geom.setMaterial(bork);
+        }
+        
+        if (num3 == 250)
+        {
+            Material bork = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            bork.setColor("Color", ColorRGBA.Blue); // color of matierial
+            geom.setMaterial(bork);
+        }
+        
+        if (num3 == 500)
+        {
+            Material bork = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            bork.setColor("Color", ColorRGBA.Yellow); // color of matierial
+            geom.setMaterial(bork);
+        }
+        
+        if (num3 == 750)
+        {
+            Material bork = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            bork.setColor("Color", ColorRGBA.Green); // color of matierial
+            geom.setMaterial(bork);
+        }
+        
+        if (num3 == 1000)
+        {
+            Material bork = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            bork.setColor("Color", ColorRGBA.Orange); // color of matierial
+            geom.setMaterial(bork);
+        }
+        num3 += 1;
+        
+        if (num3 > 1250)
+            num3 = 0;
+            
+        
     }
 }
-
