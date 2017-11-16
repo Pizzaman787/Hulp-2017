@@ -37,6 +37,7 @@ public class Main extends SimpleApplication
     
     // for controls
     protected Geometry player;
+    protected Node pivot;
     Boolean isRunning=true;
     
     protected Geometry geom; // Protects or allows use in other functions
@@ -55,11 +56,13 @@ public class Main extends SimpleApplication
         mat_brick.setTexture("ColorMap", 
             assetManager.loadTexture("Textures/Terrain/BrickWall/BrickWall.jpg"));
         geom.setMaterial(mat_brick); // sets texture to a brick wall
+        geom.scale( .5f,  .5f, .5f); // halfs the cube's size
+        
          /** Create a pivot node at (0,0,0) and attach it to the root node */
-        Node pivot = new Node("pivot");
+        pivot = new Node("pivot"); // protected at top
         rootNode.attachChild(pivot); // put this node in the scene
-        pivot.attachChild(geom);
-        pivot.rotate(.4f,.4f,0f); // rotates the objects attatched to pivot
+        pivot.attachChild(geom); // attaches goem to scene
+        // pivot.rotate(.4f,.4f,0f); // rotates the objects attatched to pivot
         // use <shape>.rotate(rotations); for individual shapes
         
         // to detach use rootNode.detatchchild();
@@ -70,7 +73,9 @@ public class Main extends SimpleApplication
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setColor("Color", ColorRGBA.Blue);
         player.setMaterial(mat);
-        rootNode.attachChild(player);
+        pivot.attachChild(player);
+        pivot.setUserData( "player", 42); // stores data in pivot
+         int health = pivot.getUserData( "player" ); // calls data stored in pivot
         
         // Sphere test
         // Shape variable = new Shape(zSamples, Points, size)
@@ -82,10 +87,8 @@ public class Main extends SimpleApplication
         // rootNode.attachChild(geon);
         geon.setLocalTranslation( new Vector3f( 0.0f, 40.2f, -2.0f ) ); // moves sphere to a specific place
         geon.move( -4, -15, 0 ); // moves from current location
-        pivot.attachChild(geon);
+        rootNode.attachChild(geon);
         // pivot.rotate(.4f,.4f,0f);
-        pivot.setUserData( "geon", 42 ); // stores data in pivot
-        int id = pivot.getUserData( "geon" ); // calls data stored in pivot
         
         // tea pot
         Spatial teapot = assetManager.loadModel("Models/Teapot/Teapot.obj");
@@ -110,6 +113,7 @@ public class Main extends SimpleApplication
         num3 = 0;
         
         initKeys(); // load my custom keybinding
+        // flyCam.setEnabled(false); // removes the spectate camera controls
     }
     
         
@@ -120,7 +124,7 @@ public class Main extends SimpleApplication
         
         // makes box rotate, then appear to roll
         geom.rotate(0, 0, 2f * tpf); // tpf is time per frame
-        geom.move(-1f * tpf, 0, 0);
+        geom.move(-5f * tpf, 0, 0);
         
         
         
@@ -212,16 +216,19 @@ public class Main extends SimpleApplication
     // You can map one or several inputs to one named action
     inputManager.addMapping("Pause",  new KeyTrigger(KeyInput.KEY_P));
     inputManager.addMapping("Left",   new KeyTrigger(KeyInput.KEY_J));
-    inputManager.addMapping("Right",  new KeyTrigger(KeyInput.KEY_K));
+    inputManager.addMapping("Down",  new KeyTrigger(KeyInput.KEY_K));
+    inputManager.addMapping("Right", new KeyTrigger(KeyInput.KEY_L));
+    inputManager.addMapping("Up", new KeyTrigger(KeyInput.KEY_I));
     inputManager.addMapping("Rotate", new KeyTrigger(KeyInput.KEY_SPACE),
                                       new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
+    inputManager.addMapping("Shoot", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
     // Add the names to the action listener.
     inputManager.addListener(actionListener,"Pause");
-    inputManager.addListener(analogListener,"Left", "Right", "Rotate");
+    inputManager.addListener(analogListener,"Left", "Right", "Down", "Up", "Rotate", "Shoot");
 
   }
   
-  private ActionListener actionListener = new ActionListener() 
+  private ActionListener actionListener = new ActionListener() // pressing of a key
         {
            @Override
            public void onAction(String name, boolean keyPressed, float tpf) 
@@ -233,16 +240,17 @@ public class Main extends SimpleApplication
            }
         };  
 
-  private AnalogListener analogListener = new AnalogListener() 
+  private AnalogListener analogListener = new AnalogListener() // repeated checks
   {
     @Override
     public void onAnalog(String name, float value, float tpf)
     {   
 
-      if (isRunning) {
+      if (isRunning) 
+      {
         if (name.equals("Rotate")) 
         {
-          player.rotate(0, value*speed, 0);
+          pivot.rotate(0, value*speed, 0);
         }
         if (name.equals("Right")) 
         {
@@ -254,7 +262,24 @@ public class Main extends SimpleApplication
           Vector3f v = player.getLocalTranslation();
           player.setLocalTranslation(v.x - value*speed, v.y, v.z);
         }
-      } else 
+        if (name.equals("Down"))
+        {
+            Vector3f v = player.getLocalTranslation();
+            player.setLocalTranslation(v.x, v.y - value * speed, v.z);
+        }
+        if (name.equals("Up"))
+        {
+            Vector3f v = player.getLocalTranslation();
+            player.setLocalTranslation(v.x, v.y + value * speed, v.z);
+        }
+        if (name.equals("Shoot"))
+        {
+            // moves the color cube to the player
+            Vector3f v = player.getLocalTranslation();
+            geom.setLocalTranslation(v.x, v.y, v.z);
+        }
+      } 
+      else 
       {
         System.out.println("Press P to unpause.");
       }
