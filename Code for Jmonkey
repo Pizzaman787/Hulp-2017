@@ -11,6 +11,7 @@ import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box; // specific shape
 import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.Spatial;
+import com.jme3.math.Quaternion; // allows 3D rotation
 // for input
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
@@ -74,7 +75,11 @@ public class Main extends SimpleApplication
         Box b = new Box(1, 1, 1);
         player = new Geometry("Player", b);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Blue);
+        // makes the player a clear monkey on a box that is red
+        mat.setColor("Color", ColorRGBA.Red);
+        mat.setTexture("ColorMap", assetManager.loadTexture("Textures/ColoredTex/Monkey.png"));
+        mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);  // !
+        player.setQueueBucket(Bucket.Transparent);                        // !
         player.setMaterial(mat);
         pivotChar = new Node("pivotChar");
         rootNode.attachChild(pivotChar);
@@ -82,7 +87,7 @@ public class Main extends SimpleApplication
         pivotChar.setUserData( "player", 42); // stores data in pivot
          int health = pivotChar.getUserData( "player" ); // calls data stored in pivot
         
-        /** A translucent/transparent texture, similar to a window frame. */
+        /** A translucent/transparent texture, similar to a window frame.
         Box cube2Mesh = new Box( 1f,1f,0.01f);
         Geometry cube2Geo = new Geometry("window frame", cube2Mesh);
         Material cube2Mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -91,7 +96,7 @@ public class Main extends SimpleApplication
         cube2Geo.setQueueBucket(Bucket.Transparent);                        // !
         cube2Geo.setMaterial(cube2Mat);
         rootNode.attachChild(cube2Geo);
-
+        */
         
         // Sphere test
         // Shape variable = new Shape(zSamples, Points, size)
@@ -236,8 +241,8 @@ public class Main extends SimpleApplication
     inputManager.addMapping("Back", new KeyTrigger(KeyInput.KEY_K));
     inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
     inputManager.addMapping("Shoot", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
-    inputManager.addMapping("RotateL", new KeyTrigger(KeyInput.KEY_LEFT));
-    inputManager.addMapping("RotateR", new KeyTrigger(KeyInput.KEY_RIGHT));
+    inputManager.addMapping("RotateL", new KeyTrigger(KeyInput.KEY_U));
+    inputManager.addMapping("RotateR", new KeyTrigger(KeyInput.KEY_O));
     // Add the names to the action listener.
     inputManager.addListener(actionListener,"Pause", "Shoot");
     inputManager.addListener(analogListener,"Left", "Right", "Down", "Forward", "Back", "Jump", "RotateL", "RotateR");
@@ -271,55 +276,63 @@ public class Main extends SimpleApplication
     @Override
     public void onAnalog(String name, float value, float tpf)
     {
+        // gets player location in pivot
         Vector3f v = player.getLocalTranslation();
+        // gets player's rotation
+        Quaternion playerRotation = new Quaternion();
+        playerRotation = player.getLocalRotation();
+        // gets the pivots location
         Vector3f c = pivotChar.getLocalTranslation();
       if (isRunning)
       {
+        // System.out.println(value + " " + speed); value is apparently a random number at around .001 to .007 and speed is just 1.0
         if (name.equals("Jump")) 
         {
-            player.setLocalTranslation(v.x, v.y + value * speed, v.z);
+            player.setLocalTranslation(v.x, v.y + .002f * speed, v.z);
             //pivotChar.setLocalTranslation(c.x, c.y + value * speed, c.z);
         }
         if (name.equals("Right")) 
         {
-            player.setLocalTranslation(v.x, v.y, v.z + value*speed);
+            player.setLocalTranslation(v.x, v.y, v.z + .002f*speed);
             //pivotChar.setLocalTranslation(c.x, c.y, c.z + value*speed);
         }
         if (name.equals("Left")) 
         {
-            player.setLocalTranslation(v.x, v.y, v.z - value*speed); 
+            player.setLocalTranslation(v.x, v.y, v.z - .002f*speed); 
             //pivotChar.setLocalTranslation(c.x, c.y, c.z - value*speed);
         }
         if (name.equals("Down"))
         {
-            player.setLocalTranslation(v.x, v.y - value * speed, v.z);
+            player.setLocalTranslation(v.x, v.y - .002f * speed, v.z);
             //pivotChar.setLocalTranslation(c.x, c.y - value * speed, c.z);
         }
         if (name.equals("Forward"))
         {
-            player.setLocalTranslation(v.x + value * speed, v.y, v.z);
+            player.setLocalTranslation((v.x + .002f * speed) , v.y, v.z);
             //pivotChar.setLocalTranslation(c.x + value * speed, c.y, c.z);
         }
         if (name.equals("Back"))
         {
-            player.setLocalTranslation(v.x - value * speed, v.y, v.z);
+            player.setLocalTranslation(v.x - .002f * speed, v.y, v.z);
             //pivotChar.setLocalTranslation(c.x - value * speed, c.y, c.z);
         }
         if (name.equals("RotateL"))
         {
             // gets the world location and translates to local location
-            Vector3f f = player.getWorldTranslation();
-            player.worldToLocal(f, v); // moves to center of map for some reason
-            pivotChar.rotate(0, value*speed, 0);
-            player.setLocalTranslation(v.x, v.y, v.z);
+            //Vector3f f = player.getWorldTranslation();
+            //player.worldToLocal(v, f);
+            //pivotChar.rotate(0, .002f*speed, 0);
+            //player.setLocalTranslation(v.x, v.y, v.z);
+            player.rotate(0, .002f * speed, 0);
         }
         if (name.equals("RotateR"))
         {
             // gets the world location and translates to local location
-            Vector3f f = player.getWorldTranslation();
-            player.worldToLocal(f, v);
-            pivotChar.rotate(0, value*(-speed), 0);
-            player.setLocalTranslation(v.x, v.y, v.z);
+            //Vector3f f = player.getWorldTranslation();
+            //player.worldToLocal(v, f);
+            //pivotChar.rotate(0, .002f*(-speed), 0);
+            //player.setLocalTranslation(v.x, v.y, v.z);
+            player.rotate(0, .002f * (-speed), 0);
         }
         
         /*
@@ -327,8 +340,8 @@ public class Main extends SimpleApplication
         v = player.getLocalTranslation();
         // c = pivotChar.getLocalTranslation();
         player.setLocalTranslation(new Vector3f (c.x, 0, c.z));
-        pivotChar.setLocalTranslation(v.x, 0, v.z);
         */
+        //pivotChar.setLocalTranslation(v.x, v.y, v.z);
         
       } 
       else 
