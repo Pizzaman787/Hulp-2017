@@ -1,0 +1,128 @@
+package mygame;
+
+import com.jme3.app.SimpleApplication;
+import com.jme3.material.Material;
+import com.jme3.math.ColorRGBA;
+import com.jme3.renderer.RenderManager;
+import com.jme3.scene.Geometry;
+import com.jme3.scene.shape.Box;
+import com.jme3.animation.AnimChannel;
+import com.jme3.animation.AnimControl;
+import com.jme3.animation.AnimEventListener;
+import com.jme3.animation.LoopMode;
+import com.jme3.app.SimpleApplication;
+import com.jme3.input.KeyInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
+import com.jme3.light.DirectionalLight;
+import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f;
+import com.jme3.scene.Node;
+import com.jme3.scene.debug.SkeletonDebugger;
+import com.jme3.material.Material;
+
+
+/**
+ * This is the Main Class of your Game. You should only do initialization here.
+ * Move your Logic into AppStates or Controls
+ * @author normenhansen
+ */
+public class Main extends SimpleApplication implements AnimEventListener {
+    private AnimChannel channel; // makes animation channel
+    private AnimControl control;
+    Node player;
+    public static void main(String[] args) {
+        Main app = new Main();
+        app.start();
+    }
+
+    @Override
+  public void simpleInitApp() {
+    viewPort.setBackgroundColor(ColorRGBA.LightGray);
+    // allows custom keybinding
+    initKeys();
+    // adds light source
+    DirectionalLight dl = new DirectionalLight();
+    dl.setDirection(new Vector3f(-0.1f, -1f, -1).normalizeLocal());
+    rootNode.addLight(dl);
+    // loads and attaches the model
+    player = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
+    player.setLocalScale(0.5f);
+    rootNode.attachChild(player);
+    // loads the animation controls, then has it listen to events
+    // creates an animation channel and brings the model in in its default position
+    control = player.getControl(AnimControl.class); // assigns model to a animation channel
+    control.addListener(this);
+    channel = control.createChannel();
+    channel.setAnim("stand");
+    
+    // allow seeing the skeleton
+    SkeletonDebugger skeletonDebug = new SkeletonDebugger("skeleton", control.getSkeleton());
+    Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+    mat.setColor("Color", ColorRGBA.Green);
+    mat.getAdditionalRenderState().setDepthTest(false);
+    skeletonDebug.setMaterial(mat);
+    player.attachChild(skeletonDebug);
+  }
+  
+  public void onAnimCycleDone(AnimControl control, AnimChannel channel, String animName) 
+  {
+    // finds the animations for a model and prints in console
+    // /*
+    for (String anim : control.getAnimationNames()) 
+    {
+        System.out.println(anim);
+    }
+    // */
+      
+    // sets the animation back to standing after walking
+    if (animName.equals("Walk")) 
+    {
+      channel.setAnim("stand", 0.50f);
+      channel.setLoopMode(LoopMode.DontLoop); // prevents looping of the animation
+      channel.setSpeed(1f);
+    }
+    
+    if (animName.equals("Dodge"))
+    {
+        channel.setAnim("stand", 0.50f);
+        channel.setLoopMode(LoopMode.DontLoop); // prevents looping of the animation
+        channel.setSpeed(1f);
+    }
+    
+  }
+  
+  public void onAnimChange(AnimControl control, AnimChannel channel, String animName) {
+    // unused
+  }
+/** Custom Keybinding: Map named actions to inputs. */
+  private void initKeys() {
+    inputManager.addMapping("Walk", new KeyTrigger(KeyInput.KEY_SPACE));
+    inputManager.addMapping("Dodge", new KeyTrigger(KeyInput.KEY_D));
+    inputManager.addListener(actionListener, "Walk", "Dodge");
+  }
+  private ActionListener actionListener = new ActionListener() // pressing of a key 
+  {
+    public void onAction(String name, boolean keyPressed, float tpf) 
+    {
+      if (name.equals("Walk") && !keyPressed) 
+      {
+        if (!channel.getAnimationName().equals("Walk")) 
+        {
+          channel.setAnim("Walk", 0.50f); // number is the overlap with past animations
+          channel.setSpeed(.5f); //sets the speed of the animation
+          channel.setLoopMode(LoopMode.Loop);
+        }
+      }
+      if (name.equals("Dodge") && !keyPressed)
+      {
+            if (!channel.getAnimationName().equals("Walk")) 
+            {
+                channel.setAnim("Dodge", .5f);
+                channel.setSpeed(.5f);
+                channel.setLoopMode(LoopMode.Loop);
+            }
+      }
+    }
+  };
+}
